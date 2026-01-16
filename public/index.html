@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NEWDOCUMENTS - SEDUC</title>
+    <style>
+        body { background: #020617; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 40px; }
+        .card { background: #0f172a; padding: 30px; border-radius: 15px; border: 1px solid #3b82f6; width: 450px; }
+        input { width: 93%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #1e40af; background: #1e293b; color: white; }
+        button { width: 100%; padding: 15px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Gerador de Portarias</h2>
+        <input type="text" id="link" placeholder="Link da Planilha Google">
+        <input type="text" id="aba" placeholder="Nome da Aba (ex: BASE A)">
+        <input type="text" id="esc" placeholder="Letra da Coluna Escola (ex: B)">
+        <button onclick="gerar()">GERAR DOCUMENTO</button>
+        <p id="msg"></p>
+    </div>
+
+    <script>
+        async function gerar() {
+            const msg = document.getElementById('msg');
+            msg.innerText = "⏳ Acessando Google Sheets e gerando Word...";
+            
+            const payload = {
+                link: document.getElementById('link').value,
+                aba: document.getElementById('aba').value,
+                escola: document.getElementById('esc').value
+            };
+
+            const res = await fetch('/api/processar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = "Portaria_2026.docx"; a.click();
+                msg.innerText = "✅ Sucesso!";
+            } else {
+                msg.innerText = "❌ Erro. Verifique se a planilha foi compartilhada com o e-mail da Service Account.";
+            }
+        }
+    </script>
+</body>
+</html>

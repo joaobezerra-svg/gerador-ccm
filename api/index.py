@@ -44,7 +44,10 @@ def extrair_id(link):
 
 @app.route('/')
 def home():
-    return send_file(os.path.join(os.getcwd(), 'public', 'index.html'))
+    # Caminho robusto para o Vercel vs Local
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    template_path = os.path.join(base_dir, 'public', 'index.html')
+    return send_file(template_path)
 
 @app.route('/api/ler-colunas', methods=['POST'])
 def ler_colunas():

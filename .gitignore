@@ -1,0 +1,8 @@
+credentials.json
+__pycache__/
+*.pyc
+temp_portaria.docx
+temp_portaria.pdf
+Modelo.docx
+Portaria_2026.docx
+Portaria_Final.pdf

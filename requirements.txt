@@ -1,1 +1,10 @@
 flask
+pandas
+gspread
+oauth2client
+python-docx
+openpyxl
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+docx2pdf

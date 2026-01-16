@@ -1,51 +1,213 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>NEWDOCUMENTS - SEDUC</title>
+    <title>Gerador SEDUC v21</title>
     <style>
-        body { background: #020617; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 40px; }
-        .card { background: #0f172a; padding: 30px; border-radius: 15px; border: 1px solid #3b82f6; width: 450px; }
-        input { width: 93%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #1e40af; background: #1e293b; color: white; }
-        button { width: 100%; padding: 15px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        body {
+            background: #020617;
+            color: white;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .card {
+            background: #0f172a;
+            padding: 30px;
+            border-radius: 15px;
+            border: 2px solid #3b82f6;
+            width: 600px;
+        }
+
+        h3 {
+            color: #60a5fa;
+            text-align: center;
+            margin-top: 0;
+        }
+
+        input[type="text"] {
+            width: 95%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background: #1e293b;
+            color: white;
+            border: 1px solid #1e40af;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-blue {
+            background: #2563eb;
+        }
+
+        .btn-green {
+            background: #10b981;
+        }
+
+        .btn-red {
+            background: #ef4444;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .box-lista {
+            display: none;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #1e40af;
+            max-height: 120px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        label {
+            font-size: 11px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .field-label {
+            font-size: 10px;
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
     </style>
 </head>
+
 <body>
     <div class="card">
-        <h2>Gerador de Portarias</h2>
+        <h3>Gerador SEDUC v21 - Local</h3>
+
         <input type="text" id="link" placeholder="Link da Planilha Google">
-        <input type="text" id="aba" placeholder="Nome da Aba (ex: BASE A)">
-        <input type="text" id="esc" placeholder="Letra da Coluna Escola (ex: B)">
-        <button onclick="gerar()">GERAR DOCUMENTO</button>
-        <p id="msg"></p>
+
+        <div class="row">
+            <input type="text" id="aba" value="BASE A" style="flex: 2;">
+            <button class="btn-blue" onclick="carregar()" style="flex: 1;">1. LER COLUNAS</button>
+        </div>
+
+        <div id="box" class="box-lista">
+            <div id="lista" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;"></div>
+        </div>
+
+        <div class="row">
+            <div style="flex: 1;">
+                <span class="field-label">LETRA COLUNA ESCOLA</span>
+                <input type="text" id="esc" value="B">
+            </div>
+            <div style="flex: 2;">
+                <span class="field-label">FILTRO (NÃO CONTÉM)</span>
+                <input type="text" id="exc" value="NÃO VALIDADO">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <button class="btn-green" onclick="processar('DOCS')">GERAR NO DOCS</button>
+            <button class="btn-red" onclick="processar('PDF')">BAIXAR PDF</button>
+        </div>
+
+        <p id="msg" style="text-align: center; margin-top: 15px; color: #60a5fa; font-weight: bold; min-height: 20px;">
+        </p>
     </div>
 
     <script>
-        async function gerar() {
+        async function carregar() {
             const msg = document.getElementById('msg');
-            msg.innerText = "⏳ Acessando Google Sheets e gerando Word...";
-            
+            msg.innerText = "⏳ Lendo colunas...";
+
+            try {
+                const res = await fetch('/api/ler-colunas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        link: document.getElementById('link').value,
+                        aba: document.getElementById('aba').value
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    let h = '';
+                    data.colunas.forEach(c => {
+                        const info = c.split('|');
+                        if (info.length > 1) h += `<label><input type="checkbox" class="c-idx" value="${info[0]}"> ${info[1]}</label>`;
+                    });
+                    document.getElementById('lista').innerHTML = h;
+                    document.getElementById('box').style.display = 'block';
+                    msg.innerText = "✅ Colunas carregadas!";
+                } else {
+                    msg.innerText = "❌ " + (data.error || "Erro ao ler colunas");
+                }
+            } catch (e) {
+                msg.innerText = "❌ Erro de conexão";
+            }
+        }
+
+        async function processar(formato) {
+            const msg = document.getElementById('msg');
+            msg.innerText = "⏳ Processando... Isso pode levar alguns segundos.";
+
+            const ex = [];
+            document.querySelectorAll('.c-idx:checked').forEach(c => ex.push(c.value));
+
             const payload = {
                 link: document.getElementById('link').value,
                 aba: document.getElementById('aba').value,
-                escola: document.getElementById('esc').value
+                letra_escola: document.getElementById('esc').value,
+                filtro_excluir: document.getElementById('exc').value,
+                colunas_remover: ex.join(','),
+                formato: formato
             };
 
-            const res = await fetch('/api/processar', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            try {
+                const res = await fetch('/api/processar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            if (res.ok) {
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = "Portaria_2026.docx"; a.click();
-                msg.innerText = "✅ Sucesso!";
-            } else {
-                msg.innerText = "❌ Erro. Verifique se a planilha foi compartilhada com o e-mail da Service Account.";
+                if (formato === 'PDF' || formato === 'DOCS') {
+                    if (res.ok) {
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = formato === 'PDF' ? "Portaria_Final.pdf" : "Portaria_2026.docx";
+                        a.click();
+                        msg.innerText = "✅ Download Concluído!";
+                    } else {
+                        const err = await res.json();
+                        msg.innerText = "❌ " + (err.error || "Erro ao processar");
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                msg.innerText = "❌ Erro inesperado: " + e.message;
             }
         }
     </script>
 </body>
+
 </html>

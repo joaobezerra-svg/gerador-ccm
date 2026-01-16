@@ -4,14 +4,19 @@ import re
 import io
 import json
 from collections import defaultdict
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-
 app = Flask(__name__)
+ERROR_MSG = None
+
+try:
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+    from docx import Document
+    from docx.shared import Pt, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+except Exception as e:
+    import traceback
+    ERROR_MSG = f"Erro de Importação: {str(e)}\n{traceback.format_exc()}"
 
 # Configuração de Credenciais
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -44,6 +49,10 @@ def extrair_id(link):
 
 @app.route('/')
 def home():
+    # DEBUG: Se houve erro de importação, mostra logo na home
+    if ERROR_MSG:
+        return f"<h1>Erro Crítico no Startup</h1><pre>{ERROR_MSG}</pre>", 500
+
     # Caminho robusto para o Vercel vs Local
     try:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

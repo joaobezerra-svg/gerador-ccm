@@ -130,7 +130,10 @@ def processar():
             grupos[escola].append(dados_linha)
 
         if not grupos:
-             return {"error": "Nenhum dado encontrado após filtros."}, 400
+             msg_erro = "Nenhum dado encontrado após filtros."
+             if termo_proibido:
+                 msg_erro += f" O filtro '{termo_proibido}' eliminou todas as linhas."
+             return {"error": msg_erro}, 400
 
         # --- GERAÇÃO WORD ---
         doc = Document()
